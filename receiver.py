@@ -15,7 +15,7 @@ import sounddevice as sd
 import wcslib as wcs
 
 # TODO: Add relevant parameters to parameters.py
-from parameters import Tb, dt, # ...
+from parameters import Tb, dt, fc
 
 def main():
     parser = argparse.ArgumentParser(
@@ -40,10 +40,13 @@ def main():
     yr = yr[:, 0]           # Remove second channel
 
     # TODO: Implement demodulation, etc. here
-    # ...
-
-    # Baseband signal
-    # yb = ...
+    t = np.arange(len(yr)) * dt
+    yd = yr * np.sin(2 * np.pi * fc * t)
+    
+    cutoff = 200  # Hz
+    Wn = cutoff / ((1 / dt) / 2)
+    b, a = signal.butter(5, Wn, btype='lowpass')
+    yb = signal.lfilter(b, a, yd)
 
     # Symbol decoding
     # TODO: Adjust fs (lab 2 only, leave untouched for lab 1 unless you know what you are doing)
