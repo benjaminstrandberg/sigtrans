@@ -78,6 +78,12 @@ def main():
 
     # --- Phase alignment (fix unknown carrier phase) ---
     y_complex = yI_bb + 1j * yQ_bb
+    
+    mag = np.abs(y_complex)
+    gamma = 0.2 * np.max(mag)          # threshold (20% of max)
+    start = np.argmax(mag > gamma)     # first index above threshold
+    y_complex = y_complex[start:]      # trim everything before start
+
 
     # Estimate average phase (robust enough for this project)
     phi = np.angle(np.mean(y_complex))
@@ -85,6 +91,7 @@ def main():
 
     # Real-valued baseband waveform for decoder
     yb = np.real(y_aligned)
+
 
     print(f"[Rx] fs={fs} Hz, BPF order={N_bp}, LPF order={N_lp}")
 
