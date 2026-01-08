@@ -80,9 +80,20 @@ def main():
     y_complex = yI_bb + 1j * yQ_bb
     
     mag = np.abs(y_complex)
-    gamma = 0.2 * np.max(mag)          # threshold (20% of max)
-    start = np.argmax(mag > gamma)     # first index above threshold
-    y_complex = y_complex[start:]      # trim everything before start
+
+    gamma = 0.1 * np.max(mag)          # less aggressive than 0.2
+    idx = np.where(mag > gamma)[0]
+
+    if len(idx) == 0:
+        print("[Rx] No signal detected.")
+    else:
+        margin = int(0.2 * fs)         # 0.2 s safety margin
+        start = max(0, idx[0] - margin)
+        end   = min(len(y_complex), idx[-1] + margin)
+
+        y_complex = y_complex[start:end]
+        print(f"[Rx] Trimmed segment: {start/fs:.2f}s–{end/fs:.2f}s (len {len(y_complex)/fs:.2f}s)")
+
 
 
     # Estimate average phase (robust enough for this project)
