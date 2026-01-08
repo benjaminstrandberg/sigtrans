@@ -80,20 +80,9 @@ def main():
     y_complex = yI_bb + 1j * yQ_bb
     
     mag = np.abs(y_complex)
-
-    gamma = 0.1 * np.max(mag)          # less aggressive than 0.2
-    idx = np.where(mag > gamma)[0]
-
-    if len(idx) == 0:
-        print("[Rx] No signal detected.")
-    else:
-        margin = int(0.2 * fs)         # 0.2 s safety margin
-        start = max(0, idx[0] - margin)
-        end   = min(len(y_complex), idx[-1] + margin)
-
-        y_complex = y_complex[start:end]
-        print(f"[Rx] Trimmed segment: {start/fs:.2f}s–{end/fs:.2f}s (len {len(y_complex)/fs:.2f}s)")
-
+    gamma = 0.2 * np.max(mag)          # threshold (20% of max)
+    start = np.argmax(mag > gamma)     # first index above threshold
+    y_complex = y_complex[start:]      # trim everything before start
 
 
     # Estimate average phase (robust enough for this project)
@@ -108,45 +97,9 @@ def main():
 
     # Symbol decoding
     # TODO: Adjust fs (lab 2 only, leave untouched for lab 1 unless you know what you are doing)
-
-    fs = int(1/dt)
-    Ns = int(round(Tb * fs))  # samples per bit (should be 200)
-
-    # Try a handful of timing offsets and pick the one that yields most printable text
-    def printable_score(s):
-        return sum(32 <= ord(c) <= 126 for c in s)
-
-    best = ("", None, -1)  # (string, bits, score)
-
-    # Use the baseband you computed (yb). If it's huge, you can keep it as-is.
-    for offset in range(0, Ns, 5):   # step 5 keeps it fast
-        # how many full bits fit?
-        nbits = (len(yb) - offset) // Ns
-        if nbits <= 0:
-            continue
-
-        # sample in the middle of each bit
-        sample_idx = offset + (np.arange(nbits) * Ns) + Ns//2
-        samples = yb[sample_idx]
-
-        # BPSK decision: sign -> bits
-        br = (samples > 0).astype(int)
-
-        try:
-            s = wcs.decode_string(br)
-            sc = printable_score(s)
-            if sc > best[2]:
-                best = (s, br, sc)
-        except Exception:
-            pass
-
-        data_rx, br, sc = best
-        if br is None:
-            br = np.array([], dtype=int)
-            data_rx = ""
-
-    print(f"Received: {data_rx} (no of bits: {len(br)}; printable score: {sc}).")
-
+    br = wcs.decode_baseband_signal(yb, Tb, 1/dt)
+    data_rx = wcs.decode_string(br)
+    print(f'Received: {data_rx} (no of bits: {len(br)}).')
 
 
 if __name__ == "__main__":    
