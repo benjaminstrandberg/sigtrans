@@ -40,13 +40,53 @@ def main():
     yr = yr[:, 0]           # Remove second channel
 
     # TODO: Implement demodulation, etc. here
+    fs = int(1/dt)
     t = np.arange(len(yr)) * dt
-    yd = yr * np.sin(2 * np.pi * fc * t)
-    
-    cutoff = 200  # Hz
-    Wn = cutoff / ((1 / dt) / 2)
-    b, a = signal.butter(5, Wn, btype='lowpass')
-    yb = signal.lfilter(b, a, yd)
+
+    # --- Rx bandpass filter (interference/noise rejection) ---
+    fp_bp = [2425, 2575]   # passband (Hz)
+    fs_bp = [2300, 2700]   # stopband (Hz)
+    gpass_bp = 1           # dB
+    gstop_bp = 40          # dB
+
+    wp_bp = [f/(fs/2) for f in fp_bp]
+    ws_bp = [f/(fs/2) for f in fs_bp]
+
+    N_bp, Wn_bp = signal.cheb1ord(wp_bp, ws_bp, gpass_bp, gstop_bp)
+    b_bp, a_bp = signal.cheby1(N_bp, gpass_bp, Wn_bp, btype='bandpass')
+
+    y_ch = signal.lfilter(b_bp, a_bp, yr)
+
+    # --- IQ demodulation ---
+    yI = 2 * y_ch * np.cos(2 * np.pi * fc * t)
+    yQ = 2 * y_ch * np.sin(2 * np.pi * fc * t)
+
+    # --- Lowpass filters (baseband extraction) ---
+    fp_lp = 100     # passband edge (Hz)
+    fs_lp = 500     # stopband edge (Hz)
+    gpass_lp = 1
+    gstop_lp = 40
+
+    wp_lp = fp_lp/(fs/2)
+    ws_lp = fs_lp/(fs/2)
+
+    N_lp, Wn_lp = signal.buttord(wp_lp, ws_lp, gpass_lp, gstop_lp)
+    b_lp, a_lp = signal.butter(N_lp, Wn_lp, btype='lowpass')
+
+    yI_bb = signal.lfilter(b_lp, a_lp, yI)
+    yQ_bb = signal.lfilter(b_lp, a_lp, yQ)
+
+    # --- Phase alignment (fix unknown carrier phase) ---
+    y_complex = yI_bb + 1j * yQ_bb
+
+    # Estimate average phase (robust enough for this project)
+    phi = np.angle(np.mean(y_complex))
+    y_aligned = y_complex * np.exp(-1j * phi)
+
+    # Real-valued baseband waveform for decoder
+    yb = np.real(y_aligned)
+
+    print(f"[Rx] fs={fs} Hz, BPF order={N_bp}, LPF order={N_lp}")
 
     # Symbol decoding
     # TODO: Adjust fs (lab 2 only, leave untouched for lab 1 unless you know what you are doing)

@@ -21,7 +21,7 @@ import sounddevice as sd
 import wcslib as wcs
 
 # TODO: Add relevant parameters to parameters.py
-from parameters import Tb, dt, fc, Ac
+from parameters import Tb, dt, fc, Ac, fs
 
 
 def main():
@@ -61,7 +61,26 @@ def main():
 
     # TODO: Implement transmitter code here
     t = np.arange(len(xb)) * dt
-    xt = Ac * xb * np.sin(2*np.pi*fc*t)
+    
+    xm = Ac * xb * np.sin(2 * np.pi * fc * t)
+    
+    fp_bp = [2425,2575]
+    fs_bp = [2300,2700]
+    gpass_bp = 1
+    gstop_bp = 40
+    
+    wp_bp = [f/(fs/2) for f in fp_bp]
+    ws_bp = [f/(fs/2) for f in fs_bp]
+    
+    N_bp, Wn_bp = signal.cheb1ord(wp_bp, ws_bp, gpass_bp, gstop_bp)
+    b_bp, a_bp = signal.cheby1(N_bp, gpass_bp, Wn_bp, btype='bandpass')
+
+    # Filter 
+    xt = signal.lfilter(b_bp, a_bp, xm)
+
+    print(f"[Tx] fs={fs} Hz, bandpass order={N_bp}, duration={len(xt)/fs:.2f} s")
+    
+    
 
     # Ensure the signal is mono, then play through speakers
     xt = np.stack((xt, np.zeros(xt.shape)), axis=1)
