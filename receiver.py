@@ -79,8 +79,12 @@ def main():
     # --- Phase alignment (fix unknown carrier phase) ---
     y_complex = yI_bb + 1j * yQ_bb
     
+    win_sec = 6.0
+    win = int(win_sec * fs)
+    y_complex = y_complex[:win]
+    
     mag = np.abs(y_complex)
-    gamma = 0.2 * np.max(mag)          # threshold (20% of max)
+    gamma = 0.1 * np.max(mag)          # threshold (20% of max)
     start = np.argmax(mag > gamma)     # first index above threshold
     y_complex = y_complex[start:]      # trim everything before start
 
