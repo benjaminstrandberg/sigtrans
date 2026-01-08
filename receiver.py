@@ -108,9 +108,45 @@ def main():
 
     # Symbol decoding
     # TODO: Adjust fs (lab 2 only, leave untouched for lab 1 unless you know what you are doing)
-    br = wcs.decode_baseband_signal(yb, Tb, 1/dt)
-    data_rx = wcs.decode_string(br)
-    print(f'Received: {data_rx} (no of bits: {len(br)}).')
+
+    fs = int(1/dt)
+    Ns = int(round(Tb * fs))  # samples per bit (should be 200)
+
+    # Try a handful of timing offsets and pick the one that yields most printable text
+    def printable_score(s):
+        return sum(32 <= ord(c) <= 126 for c in s)
+
+    best = ("", None, -1)  # (string, bits, score)
+
+    # Use the baseband you computed (yb). If it's huge, you can keep it as-is.
+    for offset in range(0, Ns, 5):   # step 5 keeps it fast
+        # how many full bits fit?
+        nbits = (len(yb) - offset) // Ns
+        if nbits <= 0:
+            continue
+
+        # sample in the middle of each bit
+        sample_idx = offset + (np.arange(nbits) * Ns) + Ns//2
+        samples = yb[sample_idx]
+
+        # BPSK decision: sign -> bits
+        br = (samples > 0).astype(int)
+
+        try:
+            s = wcs.decode_string(br)
+            sc = printable_score(s)
+            if sc > best[2]:
+                best = (s, br, sc)
+        except Exception:
+            pass
+
+        data_rx, br, sc = best
+        if br is None:
+            br = np.array([], dtype=int)
+            data_rx = ""
+
+    print(f"Received: {data_rx} (no of bits: {len(br)}; printable score: {sc}).")
+
 
 
 if __name__ == "__main__":    

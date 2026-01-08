@@ -80,7 +80,8 @@ def main():
 
     print(f"[Tx] fs={fs} Hz, bandpass order={N_bp}, duration={len(xt)/fs:.2f} s")
     
-    
+    print("[Tx] xb unique values:", np.unique(xb)[:10])
+
 
     # Ensure the signal is mono, then play through speakers
     xt = np.stack((xt, np.zeros(xt.shape)), axis=1)
