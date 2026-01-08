@@ -1,7 +1,7 @@
 import numpy as np
 
 fc = 2500
-Tb = 0.01
+Tb = 0.05
 Ac = 0.2
 
 fs = 20000
