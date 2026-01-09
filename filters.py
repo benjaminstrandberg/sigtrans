@@ -19,6 +19,30 @@ import matplotlib.pyplot as plt
 
 fs = 20000
 
+#jag la till de två funtioner för att testa i test_filters.py
+def design_bandpass():
+    return signal.iirdesign(
+        wp=[2425, 2575],
+        ws=[2300, 2700],
+        gpass=1,
+        gstop=40,
+        ftype="butter",
+        output="sos",
+        fs=fs
+    )
+
+
+def design_lowpass():
+    return signal.iirdesign(
+        wp=100,
+        ws=500,
+        gpass=1,
+        gstop=40,
+        ftype="butter",
+        output="sos",
+        fs=fs
+    )
+
 # ----- Bandpass specs -----
 fp_bp = [2425, 2575]   # passband (Hz)
 fs_bp = [2300, 2700]   # stopband (Hz)
