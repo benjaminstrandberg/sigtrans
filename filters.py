@@ -13,9 +13,6 @@
 #   Passband ripple: <= 1 dB
 #   Stopband attenuation: >= 40 dB
 
-
-#BANDPASS
-
 import numpy as np
 from scipy import signal
 import matplotlib.pyplot as plt
@@ -28,30 +25,31 @@ fs_bp = [2300, 2700]   # stopband (Hz)
 gpass_bp = 1           # dB
 gstop_bp = 40          # dB
 
-wp_bp = [f/(fs/2) for f in fp_bp]
-ws_bp = [f/(fs/2) for f in fs_bp]
+sos_bp = signal.iirdesign(
+    wp=fp_bp,
+    ws=fs_bp,
+    gpass=gpass_bp,
+    gstop=gstop_bp,
+    ftype="butter",
+    output="sos",
+    fs=fs
+)
 
-N_bp, Wn_bp = signal.cheb1ord(wp_bp, ws_bp, gpass_bp, gstop_bp)
-b_bp, a_bp = signal.cheby1(N_bp, gpass_bp, Wn_bp, btype='bandpass')
+print("Bandpass SOS sections:", sos_bp.shape[0])
 
-print("Bandpass order:", N_bp)
-
-
-w, h = signal.freqz(b_bp, a_bp, fs=fs)
+w, h = signal.sosfreqz(sos_bp, worN=4096, fs=fs)
 
 plt.figure()
 plt.plot(w, 20*np.log10(np.maximum(np.abs(h), 1e-12)))
-plt.axvline(2400, color='r', linestyle='--')
-plt.axvline(2600, color='r', linestyle='--')
+plt.axvline(2425, color='r', linestyle='--')
+plt.axvline(2575, color='r', linestyle='--')
 plt.axvline(2300, color='k', linestyle=':')
 plt.axvline(2700, color='k', linestyle=':')
-plt.title(f"Bandpass magnitude response (order {N_bp})")
+plt.title(f"Bandpass magnitude response (SOS sections {sos_bp.shape[0]})")
 plt.xlabel("Frequency [Hz]")
 plt.ylabel("Magnitude [dB]")
 plt.grid(True)
 plt.show()
-
-
 
 # ----- Lowpass specs -----
 fp_lp = 100     # passband edge (Hz)
@@ -59,24 +57,26 @@ fs_lp = 500     # stopband edge (Hz)
 gpass_lp = 1
 gstop_lp = 40
 
-wp_lp = fp_lp/(fs/2)
-ws_lp = fs_lp/(fs/2)
+sos_lp = signal.iirdesign(
+    wp=fp_lp,
+    ws=fs_lp,
+    gpass=gpass_lp,
+    gstop=gstop_lp,
+    ftype="butter",
+    output="sos",
+    fs=fs
+)
 
-N_lp, Wn_lp = signal.buttord(wp_lp, ws_lp, gpass_lp, gstop_lp)
-b_lp, a_lp = signal.butter(N_lp, Wn_lp, btype='lowpass')
+print("Lowpass SOS sections:", sos_lp.shape[0])
 
-print("Lowpass order:", N_lp)
-
-
-w, h = signal.freqz(b_lp, a_lp, fs=fs)
+w, h = signal.sosfreqz(sos_lp, worN=4096, fs=fs)
 
 plt.figure()
 plt.plot(w, 20*np.log10(np.maximum(np.abs(h), 1e-12)))
 plt.axvline(100, color='r', linestyle='--')
 plt.axvline(500, color='k', linestyle=':')
-plt.title(f"Lowpass magnitude response (order {N_lp})")
+plt.title(f"Lowpass magnitude response (SOS sections {sos_lp.shape[0]})")
 plt.xlabel("Frequency [Hz]")
 plt.ylabel("Magnitude [dB]")
 plt.grid(True)
 plt.show()
-

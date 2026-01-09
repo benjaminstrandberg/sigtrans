@@ -64,21 +64,30 @@ def main():
     
     xm = Ac * xb * np.sin(2 * np.pi * fc * t)
     
-    fp_bp = [2425,2575]
-    fs_bp = [2300,2700]
-    gpass_bp = 1
-    gstop_bp = 40
-    
-    wp_bp = [f/(fs/2) for f in fp_bp]
-    ws_bp = [f/(fs/2) for f in fs_bp]
-    
-    N_bp, Wn_bp = signal.cheb1ord(wp_bp, ws_bp, gpass_bp, gstop_bp)
-    b_bp, a_bp = signal.cheby1(N_bp, gpass_bp, Wn_bp, btype='bandpass')
+    # Use actual sampling rate (must match sounddevice playback)
+    fs_local = int(1/dt)
 
-    # Filter 
-    xt = signal.lfilter(b_bp, a_bp, xm)
+    fp_bp = [2425, 2575]   # passband (Hz)
+    fs_bp = [2300, 2700]   # stopband (Hz)
+    gpass_bp = 1           # dB ripple
+    gstop_bp = 40          # dB attenuation
 
-    print(f"[Tx] fs={fs} Hz, bandpass order={N_bp}, duration={len(xt)/fs:.2f} s")
+    # Requirements-driven Butterworth BPF, implemented as SOS
+    sos_bp = signal.iirdesign(
+        wp=fp_bp,
+        ws=fs_bp,
+        gpass=gpass_bp,
+        gstop=gstop_bp,
+        ftype="butter",
+        output="sos",
+        fs=fs_local
+    )
+
+    # Filter transmit signal (band-limit into allocated channel)
+    xt = signal.sosfilt(sos_bp, xm)
+
+    print(f"[Tx] fs={fs_local} Hz, BPF sections={sos_bp.shape[0]}, duration={len(xt)/fs_local:.2f} s")
+
     
     print("[Tx] xb unique values:", np.unique(xb)[:10])
 

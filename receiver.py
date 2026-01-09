@@ -49,13 +49,19 @@ def main():
     gpass_bp = 1           # dB
     gstop_bp = 40          # dB
 
-    wp_bp = [f/(fs/2) for f in fp_bp]
-    ws_bp = [f/(fs/2) for f in fs_bp]
+    # Design bandpass as Butterworth from requirements, using SOS for stability
+    sos_bp = signal.iirdesign(
+        wp=fp_bp,          # Hz (because fs=fs is provided)
+        ws=fs_bp,          # Hz
+        gpass=gpass_bp,    # dB
+        gstop=gstop_bp,    # dB
+        ftype="butter",
+        output="sos",
+        fs=fs
+    )
 
-    N_bp, Wn_bp = signal.cheb1ord(wp_bp, ws_bp, gpass_bp, gstop_bp)
-    b_bp, a_bp = signal.cheby1(N_bp, gpass_bp, Wn_bp, btype='bandpass')
+    y_ch = signal.sosfilt(sos_bp, yr)
 
-    y_ch = signal.lfilter(b_bp, a_bp, yr)
 
     # --- IQ demodulation ---
     yI = 2 * y_ch * np.cos(2 * np.pi * fc * t)
@@ -67,14 +73,20 @@ def main():
     gpass_lp = 1
     gstop_lp = 40
 
-    wp_lp = fp_lp/(fs/2)
-    ws_lp = fs_lp/(fs/2)
+    # Design lowpass as Butterworth from requirements, using SOS for stability
+    sos_lp = signal.iirdesign(
+        wp=fp_lp,          # Hz
+        ws=fs_lp,          # Hz
+        gpass=gpass_lp,    # dB
+        gstop=gstop_lp,    # dB
+        ftype="butter",
+        output="sos",
+        fs=fs
+    )
 
-    N_lp, Wn_lp = signal.buttord(wp_lp, ws_lp, gpass_lp, gstop_lp)
-    b_lp, a_lp = signal.butter(N_lp, Wn_lp, btype='lowpass')
+    yI_bb = signal.sosfilt(sos_lp, yI)
+    yQ_bb = signal.sosfilt(sos_lp, yQ)
 
-    yI_bb = signal.lfilter(b_lp, a_lp, yI)
-    yQ_bb = signal.lfilter(b_lp, a_lp, yQ)
 
     # --- Phase alignment (fix unknown carrier phase) ---
     y_complex = yI_bb + 1j * yQ_bb
@@ -97,7 +109,7 @@ def main():
     yb = np.real(y_aligned)
 
 
-    print(f"[Rx] fs={fs} Hz, BPF order={N_bp}, LPF order={N_lp}")
+    print(f"[Rx] fs={fs} Hz, BPF sections={sos_bp.shape[0]}, LPF sections={sos_lp.shape[0]}")
 
     # Symbol decoding
     # TODO: Adjust fs (lab 2 only, leave untouched for lab 1 unless you know what you are doing)
