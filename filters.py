@@ -1,4 +1,3 @@
-# FINAL FILTER DESIGN
 # fs = 20000 Hz
 #
 # Bandpass:
@@ -43,7 +42,7 @@ def design_lowpass():
         fs=fs
     )
 
-# ----- Bandpass specs -----
+#Bandpass specs
 fp_bp = [2425, 2575]   # passband (Hz)
 fs_bp = [2300, 2700]   # stopband (Hz)
 gpass_bp = 1           # dB

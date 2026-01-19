@@ -62,7 +62,7 @@ def main():
     # TODO: Implement transmitter code here
     t = np.arange(len(xb)) * dt
     
-    xm = Ac * xb * np.sin(2 * np.pi * fc * t)
+    xm = xb * Ac * np.sin(2 * np.pi * fc * t)
     
     # Use actual sampling rate (must match sounddevice playback)
     fs_local = int(1/dt)
@@ -72,7 +72,7 @@ def main():
     gpass_bp = 1           # dB ripple
     gstop_bp = 40          # dB attenuation
 
-    # Requirements-driven Butterworth BPF, implemented as SOS
+    
     sos_bp = signal.iirdesign(
         wp=fp_bp,
         ws=fs_bp,

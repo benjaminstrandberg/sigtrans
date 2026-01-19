@@ -43,23 +43,23 @@ def main():
     fs = int(1/dt)
     t = np.arange(len(yr)) * dt
 
-    # --- Rx bandpass filter (interference/noise rejection) ---
-    fp_bp = [2425, 2575]   # passband (Hz)
-    fs_bp = [2300, 2700]   # stopband (Hz)
-    gpass_bp = 1           # dB
-    gstop_bp = 40          # dB
+    #Rx bandpass filter. Isolate our signal from noise
+    fp_bp = [2425, 2575]   
+    fs_bp = [2300, 2700]   
+    gpass_bp = 1           
+    gstop_bp = 40         
 
-    # Design bandpass as Butterworth from requirements, using SOS for stability
     sos_bp = signal.iirdesign(
-        wp=fp_bp,          # Hz (because fs=fs is provided)
-        ws=fs_bp,          # Hz
-        gpass=gpass_bp,    # dB
-        gstop=gstop_bp,    # dB
+        wp=fp_bp,         
+        ws=fs_bp,          
+        gpass=gpass_bp,    
+        gstop=gstop_bp,   
         ftype="butter",
         output="sos",
         fs=fs
     )
 
+    #Apply filter
     y_ch = signal.sosfilt(sos_bp, yr)
 
 
@@ -67,18 +67,17 @@ def main():
     yI = 2 * y_ch * np.cos(2 * np.pi * fc * t)
     yQ = 2 * y_ch * np.sin(2 * np.pi * fc * t)
 
-    # --- Lowpass filters (baseband extraction) ---
-    fp_lp = 100     # passband edge (Hz)
-    fs_lp = 500     # stopband edge (Hz)
+    #Lowpass filters (baseband)
+    fp_lp = 100     # passband
+    fs_lp = 500     # stopband
     gpass_lp = 1
     gstop_lp = 40
 
-    # Design lowpass as Butterworth from requirements, using SOS for stability
     sos_lp = signal.iirdesign(
-        wp=fp_lp,          # Hz
-        ws=fs_lp,          # Hz
-        gpass=gpass_lp,    # dB
-        gstop=gstop_lp,    # dB
+        wp=fp_lp,         
+        ws=fs_lp,         
+        gpass=gpass_lp,   
+        gstop=gstop_lp,   
         ftype="butter",
         output="sos",
         fs=fs
@@ -88,7 +87,7 @@ def main():
     yQ_bb = signal.sosfilt(sos_lp, yQ)
 
 
-    # --- Phase alignment (fix unknown carrier phase) ---
+    #Phase alignment 
     y_complex = yI_bb + 1j * yQ_bb
     
     # win_sec = 6.0
@@ -96,12 +95,12 @@ def main():
     # y_complex = y_complex[:win]
     
     # mag = np.abs(y_complex)
-    # gamma = 0.1 * np.max(mag)          # threshold (20% of max)
-    # start = np.argmax(mag > gamma)     # first index above threshold
+    # threshold = 0.1 * np.max(mag)          # threshold (20% of max)
+    # start = np.argmax(mag > threshold)     # first index above threshold
     # y_complex = y_complex[start:]      # trim everything before start
 
 
-    # Estimate average phase (robust enough for this project)
+    # Estimate average phase 
     phi = 0.5 * np.angle(np.mean(y_complex**2))
     y_aligned = y_complex * np.exp(-1j * phi)
 
