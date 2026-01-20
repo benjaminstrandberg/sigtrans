@@ -97,14 +97,14 @@ def main():
     # mag = np.abs(y_complex)
     # threshold = 0.1 * np.max(mag)          # threshold (20% of max)
     # start = np.argmax(mag > threshold)     # first index above threshold
-    # y_complex = y_complex[start:]      # trim everything before start
+    # y_complex = y_complex[start:]          # trim everything before start
 
 
     # Estimate average phase 
     phi = 0.5 * np.angle(np.mean(y_complex**2))
     y_aligned = y_complex * np.exp(-1j * phi)
 
-    # Real-valued baseband waveform for decoder
+    # Real-valued baseband waveform 
     yb = np.real(y_aligned)
 
 
@@ -112,7 +112,7 @@ def main():
 
     # Symbol decoding
     # TODO: Adjust fs (lab 2 only, leave untouched for lab 1 unless you know what you are doing)
-    br = wcs.decode_baseband_signal(yb, Tb, 1/dt)
+    br = wcs.decode_baseband_signal(y_complex, Tb, 1/dt)
     data_rx = wcs.decode_string(br)
     print(f'Received: {data_rx} (no of bits: {len(br)}).')
 

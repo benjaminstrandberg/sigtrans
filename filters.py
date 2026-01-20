@@ -74,9 +74,9 @@ plt.ylabel("Magnitude [dB]")
 plt.grid(True)
 plt.show()
 
-# ----- Lowpass specs -----
-fp_lp = 100     # passband edge (Hz)
-fs_lp = 500     # stopband edge (Hz)
+#Lowpass specs 
+fp_lp = 100     # passband edge 
+fs_lp = 500     # stopband edge 
 gpass_lp = 1
 gstop_lp = 40
 
